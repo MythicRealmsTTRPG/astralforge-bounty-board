@@ -11,21 +11,21 @@
 
     <div class="form-group">
       <label>
-        <input type="checkbox" name="autoSeed" />
+        <input type="checkbox" name="autoSeed" {{#if autoSeed}}checked{{/if}} />
         Auto-seed default quests on world load
       </label>
       <p class="notes">
-        If enabled, the module will populate initial quests when no quests exist.
+        If enabled, the module will populate starter quests when the board is empty.
       </p>
     </div>
 
     <div class="form-group">
       <label>
-        <input type="checkbox" name="allowPlayerAccept" checked />
+        <input type="checkbox" name="allowPlayerAccept" {{#if allowPlayerAccept}}checked{{/if}} />
         Allow players to accept quests
       </label>
       <p class="notes">
-        Disable to restrict quest acceptance to the GM only.
+        Disable this to require the GM to assign or accept quests manually.
       </p>
     </div>
   </section>
@@ -34,18 +34,32 @@
     <h2>Quest Behavior</h2>
 
     <div class="form-group">
-      <label>Default Expiration (Days)</label>
-      <input type="number" name="expirationDays" min="0" value="0" />
+      <label for="afbb-expiration-days">Default Expiration (Days)</label>
+      <input
+        id="afbb-expiration-days"
+        type="number"
+        name="expirationDays"
+        min="0"
+        step="1"
+        value="{{expirationDays}}"
+      />
       <p class="notes">
-        Set how long quests remain available before expiring. (0 = never expires)
+        How long available quests remain active before expiring. Set to 0 to disable automatic expiration.
       </p>
     </div>
 
     <div class="form-group">
-      <label>Max Active Quests</label>
-      <input type="number" name="maxQuests" min="0" value="0" />
+      <label for="afbb-max-quests">Max Active Quests</label>
+      <input
+        id="afbb-max-quests"
+        type="number"
+        name="maxQuests"
+        min="0"
+        step="1"
+        value="{{maxQuests}}"
+      />
       <p class="notes">
-        Limit how many quests appear at once. (0 = unlimited)
+        Limits how many quests can exist at once. Set to 0 for no limit.
       </p>
     </div>
   </section>
@@ -55,11 +69,11 @@
 
     <div class="form-group">
       <label>
-        <input type="checkbox" name="debugMode" />
+        <input type="checkbox" name="debugMode" {{#if debugMode}}checked{{/if}} />
         Enable debug logging
       </label>
       <p class="notes">
-        Outputs additional console logs for troubleshooting.
+        Outputs extra diagnostic messages to the browser console for troubleshooting.
       </p>
     </div>
   </section>
