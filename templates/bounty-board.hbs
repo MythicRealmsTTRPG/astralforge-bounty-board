@@ -43,6 +43,10 @@
       <button type="button" data-action="create-quest">
         <i class="fas fa-plus"></i> Create Quest
       </button>
+
+      <button type="button" data-action="open-settings">
+        <i class="fas fa-gears"></i> Settings
+      </button>
     {{/if}}
   </section>
 
@@ -59,12 +63,26 @@
             <div><strong>Patron:</strong> {{patron}}</div>
             <div><strong>Reward:</strong> {{reward}}</div>
             <div><strong>Location:</strong> {{locationLabel locationType}}</div>
+
             {{#if difficulty}}
               <div><strong>Difficulty:</strong> {{difficulty}}</div>
             {{/if}}
+
             {{#if postedDate}}
               <div><strong>Posted:</strong> {{postedDate}}</div>
             {{/if}}
+
+            <div><strong>Age:</strong> {{ageDays}} day{{#unless (eq ageDays 1)}}s{{/unless}}</div>
+
+            {{#if hasExpiration}}
+              {{#if (eq status "available")}}
+                <div>
+                  <strong>Expires In:</strong>
+                  {{daysRemaining}} day{{#unless (eq daysRemaining 1)}}s{{/unless}}
+                </div>
+              {{/if}}
+            {{/if}}
+
             {{#if claimedBy}}
               <div><strong>Claimed By:</strong> {{claimedBy}}</div>
             {{/if}}
