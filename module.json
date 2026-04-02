@@ -19,7 +19,12 @@
   "styles": [
     "styles/bounty-board.css"
   ],
+  "relationships": {
+    "systems": []
+  },
   "url": "https://github.com/MythicRealmsTTRPG/astralforge-bounty-board",
   "manifest": "https://raw.githubusercontent.com/MythicRealmsTTRPG/astralforge-bounty-board/main/module.json",
-  "download": "https://github.com/MythicRealmsTTRPG/astralforge-bounty-board/archive/refs/heads/main.zip"
+  "download": "https://github.com/MythicRealmsTTRPG/astralforge-bounty-board/archive/refs/heads/main.zip",
+  "license": "MIT",
+  "readme": "README.md"
 }
