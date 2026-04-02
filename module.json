@@ -1,0 +1,25 @@
+{
+  "id": "astralforge-bounty-board",
+  "title": "AstralForge Bounty Board",
+  "description": "A modular, location-based bounty board system for Foundry VTT.",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Scribe",
+      "url": "https://astralforge.studio"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/bounty-board.css"
+  ],
+  "url": "https://github.com/MythicRealmsTTRPG/astralforge-bounty-board",
+  "manifest": "https://raw.githubusercontent.com/MythicRealmsTTRPG/astralforge-bounty-board/main/module.json",
+  "download": "https://github.com/MythicRealmsTTRPG/astralforge-bounty-board/archive/refs/heads/main.zip"
+}
