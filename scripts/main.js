@@ -151,6 +151,7 @@ async function updateQuest(id, updates) {
   const quests = duplicateQuests();
   const index = quests.findIndex(q => q.id === id);
   if (index === -1) return false;
+
   quests[index] = normalizeQuest({ ...quests[index], ...updates, id });
   await saveQuests(quests);
   return true;
@@ -210,6 +211,35 @@ async function expireOldQuests() {
   }
 
   return changed;
+}
+
+function getQuestAgeDays(quest) {
+  if (!quest?.createdAt) return 0;
+  const ageMs = Date.now() - Number(quest.createdAt);
+  return Math.max(0, Math.floor(ageMs / (24 * 60 * 60 * 1000)));
+}
+
+function getQuestDaysRemaining(quest) {
+  const expirationDays = Number(getSetting("expirationDays") ?? 0);
+  if (expirationDays <= 0) return null;
+  if (!quest?.createdAt) return null;
+  if (quest.status !== "available") return null;
+
+  const ageDays = getQuestAgeDays(quest);
+  return Math.max(0, expirationDays - ageDays);
+}
+
+function enrichQuestForDisplay(quest) {
+  const ageDays = getQuestAgeDays(quest);
+  const daysRemaining = getQuestDaysRemaining(quest);
+
+  return {
+    ...quest,
+    ageDays,
+    daysRemaining,
+    hasExpiration: Number(getSetting("expirationDays") ?? 0) > 0,
+    isExpired: quest.status === "expired"
+  };
 }
 
 function notifyInfo(message) {
@@ -436,7 +466,9 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     await expireOldQuests();
 
-    const allQuests = duplicateQuests().sort((a, b) => a.title.localeCompare(b.title));
+    const allQuests = duplicateQuests()
+      .map(enrichQuestForDisplay)
+      .sort((a, b) => a.title.localeCompare(b.title));
 
     const quests = allQuests.filter(q => {
       const matchesLocation = this._filters.locationType === "all" || q.locationType === this._filters.locationType;
