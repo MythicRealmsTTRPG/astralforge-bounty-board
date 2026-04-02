@@ -17,6 +17,14 @@ const STATUS_TYPES = {
   expired: "Expired"
 };
 
+const DEFAULT_SETTINGS = {
+  autoSeed: true,
+  allowPlayerAccept: true,
+  expirationDays: 0,
+  maxQuests: 0,
+  debugMode: false
+};
+
 const DEFAULT_QUESTS = [
   {
     id: foundry.utils.randomID(),
@@ -65,6 +73,29 @@ const DEFAULT_QUESTS = [
 /* ----------------------------------------- */
 /* Helpers                                   */
 /* ----------------------------------------- */
+
+function getSetting(key) {
+  return game.settings.get(MODULE_ID, key);
+}
+
+async function setSetting(key, value) {
+  return game.settings.set(MODULE_ID, key, value);
+}
+
+function getModuleSettings() {
+  return {
+    autoSeed: getSetting("autoSeed"),
+    allowPlayerAccept: getSetting("allowPlayerAccept"),
+    expirationDays: getSetting("expirationDays"),
+    maxQuests: getSetting("maxQuests"),
+    debugMode: getSetting("debugMode")
+  };
+}
+
+function debugLog(...args) {
+  if (!getSetting("debugMode")) return;
+  console.log(`${MODULE_ID} |`, ...args);
+}
 
 function duplicateQuests() {
   return foundry.utils.deepClone(game.settings.get(MODULE_ID, "quests") ?? []);
@@ -128,12 +159,17 @@ async function deleteQuest(id) {
 
 async function updateQuestStatus(id, status) {
   if (!STATUS_TYPES[status]) return false;
+
   const quest = getQuestById(id);
   if (!quest) return false;
 
   const updates = { status };
-if (status === "accepted") updates.claimedBy = quest.claimedBy || game.user.name;
-else if (status === "available") updates.claimedBy = "";
+
+  if (status === "accepted") {
+    updates.claimedBy = quest.claimedBy || game.user.name;
+  } else if (status === "available") {
+    updates.claimedBy = "";
+  }
 
   return updateQuest(id, updates);
 }
@@ -256,12 +292,23 @@ async function openQuestDialog({ quest = null, mode = "create" } = {}) {
             return false;
           }
 
+          const maxQuests = getSetting("maxQuests");
+          if (!isEdit && maxQuests > 0) {
+            const quests = duplicateQuests();
+            if (quests.length >= maxQuests) {
+              notifyWarn(`Maximum quest limit reached (${maxQuests}).`);
+              return false;
+            }
+          }
+
           if (isEdit && quest?.id) {
             await updateQuest(quest.id, data);
             notifyInfo(`Updated quest: ${data.title}`);
+            debugLog("Quest updated", { id: quest.id, title: data.title });
           } else {
             await addQuest(data);
             notifyInfo(`Created quest: ${data.title}`);
+            debugLog("Quest created", { title: data.title });
           }
 
           return true;
@@ -296,8 +343,10 @@ async function confirmDeleteQuest(id) {
   });
 
   if (!confirmed) return;
+
   await deleteQuest(id);
   notifyInfo(`Deleted quest: ${quest.title}`);
+  debugLog("Quest deleted", { id, title: quest.title });
 }
 
 function registerHandlebarsHelpers() {
@@ -404,6 +453,11 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.render(true);
     });
 
+    html.querySelector("[data-action='open-settings']")?.addEventListener("click", async () => {
+      if (!game.user.isGM) return;
+      new BountyBoardSettingsApp().render(true);
+    });
+
     html.querySelector("[data-action='reset-filters']")?.addEventListener("click", async () => {
       this._filters = { locationType: "all", status: "all", search: "" };
       this.render(true);
@@ -430,6 +484,11 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const quest = getQuestById(id);
         if (!quest) return;
 
+        if (!game.user.isGM && !getSetting("allowPlayerAccept")) {
+          notifyWarn("Only the GM can accept quests right now.");
+          return;
+        }
+
         if (quest.status !== "available") {
           notifyWarn("That quest is no longer available.");
           return;
@@ -440,6 +499,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
           claimedBy: game.user.name
         });
 
+        debugLog("Quest accepted", { id, user: game.user.name });
         notifyInfo(`Accepted quest: ${quest.title}`);
         this.render(true);
       });
@@ -454,6 +514,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         await updateQuest(id, { status: "completed" });
         notifyInfo(`Completed quest: ${quest.title}`);
+        debugLog("Quest completed", { id, title: quest.title });
         this.render(true);
       });
     });
@@ -467,6 +528,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         await updateQuest(id, { status: "available", claimedBy: "" });
         notifyInfo(`Returned quest to available: ${quest.title}`);
+        debugLog("Quest reset to available", { id, title: quest.title });
         this.render(true);
       });
     });
@@ -480,6 +542,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         await updateQuest(id, { status: "expired" });
         notifyInfo(`Expired quest: ${quest.title}`);
+        debugLog("Quest expired", { id, title: quest.title });
         this.render(true);
       });
     });
@@ -508,7 +571,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 /* ----------------------------------------- */
-/* Settings Menu                             */
+/* Settings App                              */
 /* ----------------------------------------- */
 
 class BountyBoardSettingsApp extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -518,7 +581,7 @@ class BountyBoardSettingsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     tag: "section",
     position: {
       width: 520,
-      height: 260
+      height: 420
     },
     window: {
       title: "AstralForge Bounty Board Settings",
@@ -535,11 +598,33 @@ class BountyBoardSettingsApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   async _prepareContext() {
-    return {};
+    return getModuleSettings();
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+
+    const html = this.element;
+    if (!html) return;
+
+    html.querySelector("[data-action='save-settings']")?.addEventListener("click", async () => {
+      const autoSeed = html.querySelector("[name='autoSeed']")?.checked ?? DEFAULT_SETTINGS.autoSeed;
+      const allowPlayerAccept = html.querySelector("[name='allowPlayerAccept']")?.checked ?? DEFAULT_SETTINGS.allowPlayerAccept;
+      const expirationDays = Number(html.querySelector("[name='expirationDays']")?.value ?? DEFAULT_SETTINGS.expirationDays);
+      const maxQuests = Number(html.querySelector("[name='maxQuests']")?.value ?? DEFAULT_SETTINGS.maxQuests);
+      const debugMode = html.querySelector("[name='debugMode']")?.checked ?? DEFAULT_SETTINGS.debugMode;
+
+      await setSetting("autoSeed", autoSeed);
+      await setSetting("allowPlayerAccept", allowPlayerAccept);
+      await setSetting("expirationDays", Math.max(0, expirationDays));
+      await setSetting("maxQuests", Math.max(0, maxQuests));
+      await setSetting("debugMode", debugMode);
+
+      notifyInfo("AstralForge Bounty Board settings saved.");
+      debugLog("Settings saved", getModuleSettings());
+
+      this.render(true);
+    });
   }
 }
 
@@ -561,19 +646,82 @@ Hooks.once("init", () => {
     default: []
   });
 
-  game.modules.get(MODULE_ID).api = {
-    openBoard: options => new BountyBoardApp(options).render(true),
-    getQuests: duplicateQuests,
-    addQuest,
-    updateQuest,
-    deleteQuest,
-    updateQuestStatus
-  };
+  game.settings.register(MODULE_ID, "autoSeed", {
+    name: "Auto-seed default quests",
+    hint: "Populate starter quests automatically when the board is empty.",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: DEFAULT_SETTINGS.autoSeed
+  });
+
+  game.settings.register(MODULE_ID, "allowPlayerAccept", {
+    name: "Allow players to accept quests",
+    hint: "If disabled, only the GM may move quests into accepted state.",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: DEFAULT_SETTINGS.allowPlayerAccept
+  });
+
+  game.settings.register(MODULE_ID, "expirationDays", {
+    name: "Default expiration days",
+    hint: "How many days before newly created quests are considered expired. 0 disables expiration.",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: DEFAULT_SETTINGS.expirationDays
+  });
+
+  game.settings.register(MODULE_ID, "maxQuests", {
+    name: "Maximum active quests",
+    hint: "Limits how many quests can remain active at one time. 0 means unlimited.",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: DEFAULT_SETTINGS.maxQuests
+  });
+
+  game.settings.register(MODULE_ID, "debugMode", {
+    name: "Debug mode",
+    hint: "Enable extra console logging for troubleshooting.",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: DEFAULT_SETTINGS.debugMode
+  });
+
+  game.settings.registerMenu(MODULE_ID, "settingsMenu", {
+    name: "AstralForge Bounty Board Settings",
+    label: "Open Settings",
+    hint: "Configure bounty board behavior.",
+    icon: "fas fa-gears",
+    type: BountyBoardSettingsApp,
+    restricted: true
+  });
+
+  const module = game.modules.get(MODULE_ID);
+  if (module) {
+    module.api = {
+      openBoard: options => new BountyBoardApp(options).render(true),
+      openSettings: () => new BountyBoardSettingsApp().render(true),
+      getQuests: duplicateQuests,
+      addQuest,
+      updateQuest,
+      deleteQuest,
+      updateQuestStatus,
+      getSettings: getModuleSettings
+    };
+  }
 });
 
 Hooks.once("ready", async () => {
   console.log(`${MODULE_ID} | Ready`);
-  if (game.user.isGM) await seedDefaultQuests();
+
+  if (game.user.isGM && getSetting("autoSeed")) {
+    await seedDefaultQuests();
+    debugLog("Auto-seed checked on ready.");
+  }
 });
 
 /* ----------------------------------------- */
@@ -590,7 +738,6 @@ Hooks.on("getSceneControlButtons", controls => {
     onClick: () => new BountyBoardApp().render(true)
   };
 
-  // Compatibility approach for differing control structures.
   if (Array.isArray(controls)) {
     controls.push({
       name: "astralforgeBountyBoard",
