@@ -2,13 +2,20 @@
 /* AstralForge Bounty Board Core */
 /* ============================= */
 
-.astralforge-bounty-board-app {
+.astralforge-bounty-board-app,
+.astralforge-bounty-settings {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding: 0.5rem;
   gap: 0.5rem;
   font-family: var(--font-primary);
+  box-sizing: border-box;
+}
+
+.astralforge-bounty-board-app *,
+.astralforge-bounty-settings * {
+  box-sizing: border-box;
 }
 
 /* ============================= */
@@ -23,11 +30,13 @@
 .afbb-title {
   font-size: 1.6rem;
   font-weight: bold;
+  line-height: 1.2;
 }
 
 .afbb-subtitle {
   font-size: 0.9rem;
   opacity: 0.7;
+  margin-top: 0.2rem;
 }
 
 /* ============================= */
@@ -38,19 +47,50 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  align-items: center;
+  align-items: end;
+}
+
+.afbb-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 140px;
+  font-size: 0.85rem;
 }
 
 .afbb-filters select,
-.afbb-filters input {
-  padding: 0.25rem;
+.afbb-filters input,
+.astralforge-bounty-settings input,
+.astralforge-bounty-settings select,
+.astralforge-bounty-settings textarea {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
   border-radius: 4px;
   border: 1px solid var(--color-border-light-primary);
   background: var(--color-bg);
+  color: var(--color-text-primary);
+  font: inherit;
 }
 
-.afbb-filters button {
-  padding: 0.3rem 0.6rem;
+.afbb-filters input::placeholder,
+.astralforge-bounty-settings input::placeholder,
+.astralforge-bounty-settings textarea::placeholder {
+  opacity: 0.65;
+}
+
+.afbb-filters button,
+.afbb-actions button,
+.afbb-settings-footer button {
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.afbb-filters button i,
+.afbb-actions button i,
+.afbb-settings-footer button i {
+  margin-right: 0.25rem;
 }
 
 /* ============================= */
@@ -60,7 +100,9 @@
 .afbb-quest-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 4px;
+  min-height: 0;
 }
 
 /* ============================= */
@@ -70,10 +112,10 @@
 .afbb-quest {
   border: 1px solid var(--color-border-light-primary);
   border-radius: 8px;
-  padding: 0.6rem;
-  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.6rem;
   background: rgba(0, 0, 0, 0.05);
-  transition: all 0.15s ease-in-out;
+  transition: border-color 0.15s ease-in-out, transform 0.15s ease-in-out;
 }
 
 .afbb-quest:hover {
@@ -88,19 +130,25 @@
 .afbb-quest-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
+  gap: 0.75rem;
 }
 
 .afbb-quest-title {
   font-weight: bold;
   font-size: 1.1rem;
+  line-height: 1.25;
 }
 
 .afbb-status {
-  font-size: 0.8rem;
-  padding: 2px 6px;
-  border-radius: 4px;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-border-light-primary);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ============================= */
@@ -117,12 +165,12 @@
 
 .status-completed {
   border-left: 4px solid #4a8;
-  opacity: 0.7;
+  opacity: 0.78;
 }
 
 .status-expired {
   border-left: 4px solid #a44;
-  opacity: 0.5;
+  opacity: 0.58;
 }
 
 /* ============================= */
@@ -130,8 +178,10 @@
 /* ============================= */
 
 .afbb-quest-body {
-  margin-top: 0.3rem;
+  margin-top: 0.45rem;
   font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 /* ============================= */
@@ -140,8 +190,13 @@
 
 .afbb-meta {
   font-size: 0.8rem;
-  opacity: 0.75;
-  margin-top: 0.3rem;
+  opacity: 0.8;
+  margin-top: 0.35rem;
+  line-height: 1.35;
+}
+
+.afbb-meta strong {
+  opacity: 1;
 }
 
 /* ============================= */
@@ -149,17 +204,20 @@
 /* ============================= */
 
 .afbb-tags {
-  margin-top: 0.3rem;
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 
 .afbb-tag {
   display: inline-block;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--color-border-light-primary);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  margin-right: 4px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
 /* ============================= */
@@ -167,15 +225,15 @@
 /* ============================= */
 
 .afbb-actions {
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .afbb-actions button {
-  font-size: 0.75rem;
-  padding: 2px 6px;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
 }
 
 /* ============================= */
@@ -183,9 +241,9 @@
 /* ============================= */
 
 .afbb-gm-controls {
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
   border-top: 1px solid var(--color-border-light-primary);
-  padding-top: 0.3rem;
+  padding-top: 0.45rem;
 }
 
 .afbb-gm-controls button {
@@ -198,8 +256,60 @@
 
 .afbb-empty {
   text-align: center;
-  opacity: 0.6;
-  padding: 1rem;
+  opacity: 0.65;
+  padding: 1.25rem;
+  border: 1px dashed var(--color-border-light-primary);
+  border-radius: 8px;
+}
+
+/* ============================= */
+/* Settings UI */
+/* ============================= */
+
+.afbb-settings-section {
+  border-top: 1px solid var(--color-border-light-primary);
+  padding-top: 0.75rem;
+}
+
+.afbb-settings-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.astralforge-bounty-settings .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+}
+
+.astralforge-bounty-settings .form-group label {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.astralforge-bounty-settings .form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.45rem;
+  vertical-align: middle;
+}
+
+.astralforge-bounty-settings .form-group label:has(input[type="checkbox"]) {
+  font-weight: 500;
+}
+
+.astralforge-bounty-settings .notes {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.72;
+  line-height: 1.35;
+}
+
+.afbb-settings-footer {
+  margin-top: auto;
+  text-align: right;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border-light-primary);
 }
 
 /* ============================= */
@@ -213,4 +323,35 @@
 .afbb-quest-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
+}
+
+/* ============================= */
+/* Responsive */
+/* ============================= */
+
+@media (max-width: 640px) {
+  .afbb-quest-header {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .afbb-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .afbb-filters label {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .afbb-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .afbb-actions button,
+  .afbb-filters button {
+    width: 100%;
+  }
 }
