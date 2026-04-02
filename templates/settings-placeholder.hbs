@@ -1,0 +1,72 @@
+<div class="astralforge-bounty-settings">
+  <header class="afbb-header">
+    <div class="afbb-title">AstralForge Bounty Board Settings</div>
+    <div class="afbb-subtitle">
+      Configure global behavior for bounty boards and quest generation.
+    </div>
+  </header>
+
+  <section class="afbb-settings-section">
+    <h2>General</h2>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="autoSeed" />
+        Auto-seed default quests on world load
+      </label>
+      <p class="notes">
+        If enabled, the module will populate initial quests when no quests exist.
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="allowPlayerAccept" checked />
+        Allow players to accept quests
+      </label>
+      <p class="notes">
+        Disable to restrict quest acceptance to the GM only.
+      </p>
+    </div>
+  </section>
+
+  <section class="afbb-settings-section">
+    <h2>Quest Behavior</h2>
+
+    <div class="form-group">
+      <label>Default Expiration (Days)</label>
+      <input type="number" name="expirationDays" min="0" value="0" />
+      <p class="notes">
+        Set how long quests remain available before expiring. (0 = never expires)
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label>Max Active Quests</label>
+      <input type="number" name="maxQuests" min="0" value="0" />
+      <p class="notes">
+        Limit how many quests appear at once. (0 = unlimited)
+      </p>
+    </div>
+  </section>
+
+  <section class="afbb-settings-section">
+    <h2>Debug</h2>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="debugMode" />
+        Enable debug logging
+      </label>
+      <p class="notes">
+        Outputs additional console logs for troubleshooting.
+      </p>
+    </div>
+  </section>
+
+  <footer class="afbb-settings-footer">
+    <button type="button" data-action="save-settings">
+      <i class="fas fa-save"></i> Save Settings
+    </button>
+  </footer>
+</div>
