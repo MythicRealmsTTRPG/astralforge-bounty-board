@@ -1,0 +1,138 @@
+<div class="astralforge-bounty-board-app">
+  <header class="afbb-header">
+    <div class="afbb-title">AstralForge Bounty Board</div>
+    <div class="afbb-subtitle">
+      Posted notices, guild contracts, whispered errands, and dangerous opportunities.
+    </div>
+  </header>
+
+  <section class="afbb-filters">
+    <label>
+      <span>Location</span>
+      <select name="locationFilter">
+        {{#each locationOptions}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
+
+    <label>
+      <span>Status</span>
+      <select name="statusFilter">
+        {{#each statusOptions}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
+
+    <label style="flex: 1;">
+      <span>Search</span>
+      <input
+        type="text"
+        name="searchFilter"
+        value="{{filters.search}}"
+        placeholder="Search quests, patrons, rewards, tags..."
+      />
+    </label>
+
+    <button type="button" data-action="reset-filters">
+      <i class="fas fa-rotate-left"></i> Reset
+    </button>
+
+    {{#if isGM}}
+      <button type="button" data-action="create-quest">
+        <i class="fas fa-plus"></i> Create Quest
+      </button>
+    {{/if}}
+  </section>
+
+  <section class="afbb-quest-list">
+    {{#if hasQuests}}
+      {{#each quests}}
+        <article class="afbb-quest status-{{status}}">
+          <div class="afbb-quest-header">
+            <div class="afbb-quest-title">{{title}}</div>
+            <div class="afbb-status">{{statusLabel status}}</div>
+          </div>
+
+          <div class="afbb-meta">
+            <div><strong>Patron:</strong> {{patron}}</div>
+            <div><strong>Reward:</strong> {{reward}}</div>
+            <div><strong>Location:</strong> {{locationLabel locationType}}</div>
+            {{#if difficulty}}
+              <div><strong>Difficulty:</strong> {{difficulty}}</div>
+            {{/if}}
+            {{#if postedDate}}
+              <div><strong>Posted:</strong> {{postedDate}}</div>
+            {{/if}}
+            {{#if claimedBy}}
+              <div><strong>Claimed By:</strong> {{claimedBy}}</div>
+            {{/if}}
+          </div>
+
+          <div class="afbb-quest-body">
+            {{description}}
+          </div>
+
+          {{#if tags.length}}
+            <div class="afbb-tags">
+              {{#each tags}}
+                <span class="afbb-tag">{{this}}</span>
+              {{/each}}
+            </div>
+          {{/if}}
+
+          <div class="afbb-actions">
+            {{#if (eq status "available")}}
+              <button type="button" data-action="accept-quest" data-quest-id="{{id}}">
+                <i class="fas fa-hand-paper"></i> Accept
+              </button>
+            {{/if}}
+          </div>
+
+          {{#if ../isGM}}
+            <div class="afbb-gm-controls">
+              <div class="afbb-actions">
+                <button type="button" data-action="edit-quest" data-quest-id="{{id}}">
+                  <i class="fas fa-pen"></i> Edit
+                </button>
+
+                {{#if (eq status "accepted")}}
+                  <button type="button" data-action="mark-complete" data-quest-id="{{id}}">
+                    <i class="fas fa-check"></i> Complete
+                  </button>
+                {{/if}}
+
+                {{#unless (eq status "available")}}
+                  <button type="button" data-action="mark-available" data-quest-id="{{id}}">
+                    <i class="fas fa-arrow-rotate-left"></i> Available
+                  </button>
+                {{/unless}}
+
+                {{#unless (eq status "expired")}}
+                  <button type="button" data-action="mark-expired" data-quest-id="{{id}}">
+                    <i class="fas fa-hourglass-end"></i> Expire
+                  </button>
+                {{/unless}}
+
+                <button type="button" data-action="delete-quest" data-quest-id="{{id}}">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+
+              {{#if notes}}
+                <div class="afbb-meta">
+                  <strong>GM Notes:</strong> {{notes}}
+                </div>
+              {{/if}}
+            </div>
+          {{/if}}
+        </article>
+      {{/each}}
+    {{else}}
+      <div class="afbb-empty">
+        <p>No quests match the current filters.</p>
+      </div>
+    {{/if}}
+  </section>
+</div>
