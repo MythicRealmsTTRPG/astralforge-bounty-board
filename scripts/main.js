@@ -132,8 +132,8 @@ async function updateQuestStatus(id, status) {
   if (!quest) return false;
 
   const updates = { status };
-  if (status === "accepted" && !quest.claimedBy) updates.claimedBy = game.user.name;
-  if (status !== "accepted") updates.claimedBy = quest.claimedBy ?? "";
+if (status === "accepted") updates.claimedBy = quest.claimedBy || game.user.name;
+else if (status === "available") updates.claimedBy = "";
 
   return updateQuest(id, updates);
 }
