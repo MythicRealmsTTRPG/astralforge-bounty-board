@@ -36,6 +36,7 @@ const DEFAULT_QUESTS = [
     status: "available",
     difficulty: "Low",
     postedDate: new Date().toLocaleDateString(),
+    createdAt: Date.now(),
     tags: ["vermin", "investigation"],
     claimedBy: "",
     notes: ""
@@ -50,6 +51,7 @@ const DEFAULT_QUESTS = [
     status: "available",
     difficulty: "Moderate",
     postedDate: new Date().toLocaleDateString(),
+    createdAt: Date.now(),
     tags: ["escort", "investigation"],
     claimedBy: "",
     notes: ""
@@ -64,6 +66,7 @@ const DEFAULT_QUESTS = [
     status: "available",
     difficulty: "Moderate",
     postedDate: new Date().toLocaleDateString(),
+    createdAt: Date.now(),
     tags: ["retrieval", "urban"],
     claimedBy: "",
     notes: ""
@@ -122,6 +125,7 @@ function normalizeQuest(data = {}) {
     status: data.status && STATUS_TYPES[data.status] ? data.status : "available",
     difficulty: String(data.difficulty ?? "").trim(),
     postedDate: String(data.postedDate ?? new Date().toLocaleDateString()).trim(),
+    createdAt: Number(data.createdAt ?? Date.now()),
     tags: Array.isArray(data.tags)
       ? data.tags.map(t => String(t).trim()).filter(Boolean)
       : String(data.tags ?? "")
@@ -172,6 +176,40 @@ async function updateQuestStatus(id, status) {
   }
 
   return updateQuest(id, updates);
+}
+
+function isQuestExpired(quest) {
+  const expirationDays = Number(getSetting("expirationDays") ?? 0);
+  if (expirationDays <= 0) return false;
+  if (!quest) return false;
+  if (quest.status !== "available") return false;
+
+  const createdAt = Number(quest.createdAt ?? 0);
+  if (!createdAt) return false;
+
+  const ageMs = Date.now() - createdAt;
+  const expirationMs = expirationDays * 24 * 60 * 60 * 1000;
+
+  return ageMs >= expirationMs;
+}
+
+async function expireOldQuests() {
+  const quests = duplicateQuests();
+  let changed = false;
+
+  for (const quest of quests) {
+    if (isQuestExpired(quest)) {
+      quest.status = "expired";
+      changed = true;
+      debugLog("Quest auto-expired", { id: quest.id, title: quest.title });
+    }
+  }
+
+  if (changed) {
+    await saveQuests(quests);
+  }
+
+  return changed;
 }
 
 function notifyInfo(message) {
@@ -396,6 +434,8 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   async _prepareContext() {
+    await expireOldQuests();
+
     const allQuests = duplicateQuests().sort((a, b) => a.title.localeCompare(b.title));
 
     const quests = allQuests.filter(q => {
@@ -494,6 +534,13 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
           return;
         }
 
+        if (isQuestExpired(quest)) {
+          await updateQuest(id, { status: "expired" });
+          notifyWarn("That quest has expired.");
+          this.render(true);
+          return;
+        }
+
         await updateQuest(id, {
           status: "accepted",
           claimedBy: game.user.name
@@ -526,7 +573,7 @@ class BountyBoardApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const quest = getQuestById(id);
         if (!quest) return;
 
-        await updateQuest(id, { status: "available", claimedBy: "" });
+        await updateQuest(id, { status: "available", claimedBy: "", createdAt: Date.now() });
         notifyInfo(`Returned quest to available: ${quest.title}`);
         debugLog("Quest reset to available", { id, title: quest.title });
         this.render(true);
@@ -620,6 +667,10 @@ class BountyBoardSettingsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       await setSetting("maxQuests", Math.max(0, maxQuests));
       await setSetting("debugMode", debugMode);
 
+      if (game.user.isGM) {
+        await expireOldQuests();
+      }
+
       notifyInfo("AstralForge Bounty Board settings saved.");
       debugLog("Settings saved", getModuleSettings());
 
@@ -710,7 +761,8 @@ Hooks.once("init", () => {
       updateQuest,
       deleteQuest,
       updateQuestStatus,
-      getSettings: getModuleSettings
+      getSettings: getModuleSettings,
+      expireOldQuests
     };
   }
 });
@@ -721,6 +773,10 @@ Hooks.once("ready", async () => {
   if (game.user.isGM && getSetting("autoSeed")) {
     await seedDefaultQuests();
     debugLog("Auto-seed checked on ready.");
+  }
+
+  if (game.user.isGM) {
+    await expireOldQuests();
   }
 });
 
